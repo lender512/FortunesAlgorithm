@@ -14,3 +14,5 @@ class Point:
         return self.x < other.x
     def __le__(self, other):
         return self.x <= other.x
+    def __ne__(self, other):
+        return self.x != other.x or self.y != other.y
