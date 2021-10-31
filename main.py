@@ -5,7 +5,7 @@ from util import *
 from minHeap import *
 from parabola import *
 from point import *
-from searchTree import *
+import math
 fig, ax = plt.subplots()
 
 step = 0.001
@@ -25,8 +25,6 @@ for i in range(n):
     p = Point(x[i], y[i])
     Q.insertKey(p)
 
-
-parabolasAVL = AVLTree()
 root = None
 # root = parabolasAVL.insert(None, Parabola(Q.extractMin()))
 # root.found = True
@@ -36,90 +34,84 @@ plt.scatter(x, y)
 #Sweeping line
 traversal, = plt.plot((0,0), (0,1))
 
-def intersectionL(A, B, i):
-    p = A
-
-    if A.x == B.x:
-        y = (A.y + B.y) / 2
-    elif A.x == i:
-        y = A.y
-    elif B.x == i:
-        y = B.y
-        p = B
+def intersection(p0, p1, l):
+    # get the intersection of two parabolas
+    p = p0
+    if (p0.x == p1.x):
+        py = (p0.y + p1.y) / 2.0
+    elif (p1.x == l):
+        py = p1.y
+    elif (p0.x == l):
+        py = p0.y
+        p = p1
     else:
-        pA = A.x - i
-        pB = B.x - i
+        # use quadratic formula
+        z0 = 2.0 * (p0.x - l)
+        z1 = 2.0 * (p1.x - l)
 
-        a = (1/(2*pA)) - (1/(2*pB))
+        a = 1.0/z0 - 1.0/z1;
+        b = -2.0 * (p0.y/z0 - p1.y/z1)
+        c = 1.0 * (p0.y**2 + p0.x**2 - l**2) / z0 - 1.0 * (p1.y**2 + p1.x**2 - l**2) / z1
+
+        py = 1.0 * (-b-math.sqrt(b*b - 4*a*c)) / (2*a)
         
-        b = (-A.y/pA) - (-B.y/pB)
+    px = 1.0 * (p.x**2 + (p.y-py)**2 - l**2) / (2*p.x-2*l)
+    res = Point(px, py)
+    return res
 
-        c = ((A.y*A.y)/(2*pA) + A.x) - ((B.y*B.y)/(2*pB) + B.x) 
-
-        y = (-b - np.sqrt(b*b - 4*a*c))/ (2*a)
-
-    x = (p.x*p.x + (p.y-y)*(p.y-y) - i*i) / (2*p.x - 2*i)
-    # x =(p.x*p.x + (p.y-y)*(p.y-y))/(2*(p.x-i))
-    # x = a*y*y + b*y +c
-
-    return x, y
-
-def intersectionU(A, B, i):
-    p = A
-
-    if A.x == B.x:
-        y = (A.y + B.y) / 2
-    elif A.x == i:
-        y = A.y
-    elif B.x == i:
-        y = B.y
-        p = B
+def intersectionL(p0, p1, l):
+    # get the intersection of two parabolas
+    p = p0
+    if (p0.x == p1.x):
+        py = (p0.y + p1.y) / 2.0
+    elif (p1.x == l):
+        py = p1.y
+    elif (p0.x == l):
+        py = p0.y
+        p = p1
     else:
-        pA = A.x - i
-        pB = B.x - i
+        # use quadratic formula
+        z0 = 2.0 * (p0.x - l)
+        z1 = 2.0 * (p1.x - l)
 
-        a = (1/(2*pA)) - (1/(2*pB))
+        a = 1.0/z0 - 1.0/z1;
+        b = -2.0 * (p0.y/z0 - p1.y/z1)
+        c = 1.0 * (p0.y**2 + p0.x**2 - l**2) / z0 - 1.0 * (p1.y**2 + p1.x**2 - l**2) / z1
+
+        py = 1.0 * (-b+math.sqrt(b*b - 4*a*c)) / (2*a)
         
-        b = (-A.y/pA) - (-B.y/pB)
-
-        c = ((A.y*A.y)/(2*pA) + A.x) - ((B.y*B.y)/(2*pB) + B.x) 
-
-        y = (-b + np.sqrt(b*b - 4*a*c))/ (2*a)
-
-    x = (p.x*p.x + (p.y-y)*(p.y-y) - i*i) / (2*p.x - 2*i)
-    # x =(p.x*p.x + (p.y-y)*(p.y-y))/(2*(p.x-i))
-    # x = a*y*y + b*y +c
-
-    return x, y
-
+    px = 1.0 * (p.x**2 + (p.y-py)**2 - l**2) / (2*p.x-2*l)
+    res = Point(px, py)
+    return res
 
 def update(parabola, i):
         xCoord = parabola.vertex.x
         yCoord = parabola.vertex.y
 
-        parXU = np.arange(parabola.upperLimit[0], parabola.mostRight, step/40)
+        parXU = np.arange(parabola.upperLimit.x, i, step/40)
         p = i-xCoord
         parYU = np.sqrt(-(2*p*(parXU-i+p/2)))+yCoord
-        parabola.upperLimit = parabola.upperLimit[0], np.sqrt(-(2*p*(parabola.upperLimit[0]-i+p/2)))+yCoord
+        if  parabola.next is not None:
+            parabola.upperLimit = intersection(parabola.vertex, parabola.next.vertex, i)
         
         parabola.parUpper.set_xdata(parXU)
         parabola.parUpper.set_ydata(parYU)
 
-        parXL = np.arange(parabola.lowerLimit[0], parabola.mostRight, step/40)
+        parXL = np.arange(parabola.lowerLimit.x, i, step/40)
         parYL = -np.sqrt(-(2*p*(parXL-i+p/2)))+yCoord
-        parabola.lowerLimit = parabola.lowerLimit[0], -np.sqrt(-(2*p*(parabola.lowerLimit[0]-i+p/2)))+yCoord
+        if  parabola.prev is not None:
+            parabola.lowerLimit = intersection(parabola.vertex, parabola.prev.vertex, i)
 
         parabola.parLower.set_xdata(parXL)
         parabola.parLower.set_ydata(parYL)
 
-        upperParabola = parabolasAVL.search(root,yCoord)
 
-        if upperParabola is not None and upperParabola.value.vertex != parabola.vertex:
-            parabola.found = True
-            upperPoint = intersectionU(upperParabola.value.vertex, parabola.vertex, i)
-            lowerPoint = intersectionL(upperParabola.value.vertex, parabola.vertex, i)
-            parabola.upperLimit = upperPoint
-            parabola.lowerLimit = lowerPoint
+        # if upperParabola is not None and upperParabola.value.vertex != parabola.vertex:
+        #     parabola.found = True
+        #     upperPoint = intersectionU(upperParabola.value.vertex, parabola.vertex, i)
+        #     lowerPoint = intersectionL(upperParabola.value.vertex, parabola.vertex, i)
+        #     parabola.upperLimit = upperPoint
+        #     parabola.lowerLimit = lowerPoint
             # upperParabola.value.lowerLimit = point
             # plt.scatter(point[0], point[1])
 
@@ -147,20 +139,76 @@ def update(parabola, i):
 
 def inOrderUpdate(root, i):
     if root is not None:
-        inOrderUpdate(root.l, i)
-        update(root.value, i)
-        inOrderUpdate(root.r, i)
+        update(root, i)
+        inOrderUpdate(root.next, i)
 
+def intersect(p, i):
+    # check whether a new parabola at point p intersect with arc i
+    if (i is None): return False, None
+    if (i.vertex.x == p.x): return False, None
+
+    a = 0.0
+    b = 0.0
+
+    if i.prev is not None:
+        a = (intersection(i.prev.p, i.p, 1.0*p.x)).y
+    if i.next is not None:
+        b = (intersection(i.p, i.next.p, 1.0*p.x)).y
+
+    if (((i.prev is None) or (a <= p.y)) and ((i.next is None) or (p.y <= b))):
+        py = p.y
+        px = 1.0 * ((i.vertex.x)**2 + (i.vertex.y-py)**2 - p.x**2) / (2*i.vertex.x - 2*p.x)
+        res = Point(px, py)
+        return True, res
+    return False, None
+    
+
+
+def frontInsert(p):
+    global root
+    #If its the first point (most leftone)
+    if root is None:
+        root = Parabola(p)
+    else:
+        #Find current parabola at height p.y
+        i = root
+        while i is not None:
+            flag, z = intersect(p, i)
+            if flag:
+                #Create extra parabola if necesary
+                flag, zz = intersect(p, i.next)
+                if (i.next is not None) and (not flag):
+                    i.next.prev = Parabola(i.vertex, prev=i, next=i.next)
+                    i.next = i.next.prev
+                else:
+                    i.next = Parabola(i.vertex, prev=i)
+                i.next.lowerLimit = i.lowerLimit
+
+                i.next.prev = Parabola(p, prev=i, next=i.next)
+                i.next = i.next.prev
+
+                i = i.next 
+                i.prev.upperLimit = i.lowerLimit = z
+                i.next.lowerLimit = i.upperLimit = z
+                
+                return
+            i = i.next
+
+
+
+
+def processPoint():
+    p = Q.extractMin()
+
+    frontInsert(p)
 
 def animationFrame(i):
     traversal.set_xdata(i)
 
-    global root
-    if (len(Q.heap) > 0 and Q.getMin().x < i):
-        if root is None:
-            root = parabolasAVL.insert(root, Parabola(Q.extractMin()))
-        else:
-            parabolasAVL.insert(root, Parabola(Q.extractMin()))
+    
+    if (len(Q.heap) > 0):
+        if (Q.getMin().x < i):
+            processPoint()
 
     inOrderUpdate(root, i)
 
