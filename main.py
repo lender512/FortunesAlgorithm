@@ -10,7 +10,7 @@ fig, ax = plt.subplots()
 
 step = 0.001
 size = 1
-n = 2
+n = 3
 
 ax.set_xlim(0, size), ax.set_ylim(0, size)
 
@@ -26,6 +26,7 @@ for i in range(n):
     Q.insertKey(p)
 
 root = None
+lastAdded = None
 # root = parabolasAVL.insert(None, Parabola(Q.extractMin()))
 # root.found = True
 
@@ -54,7 +55,7 @@ def intersection(p0, p1, l):
         c = 1.0 * (p0.y**2 + p0.x**2 - l**2) / z0 - 1.0 * (p1.y**2 + p1.x**2 - l**2) / z1
 
         py = 1.0 * (-b-math.sqrt(b*b - 4*a*c)) / (2*a)
-        
+
     px = 1.0 * (p.x**2 + (p.y-py)**2 - l**2) / (2*p.x-2*l)
     res = Point(px, py)
     return res
@@ -79,7 +80,7 @@ def intersectionL(p0, p1, l):
         c = 1.0 * (p0.y**2 + p0.x**2 - l**2) / z0 - 1.0 * (p1.y**2 + p1.x**2 - l**2) / z1
 
         py = 1.0 * (-b+math.sqrt(b*b - 4*a*c)) / (2*a)
-        
+
     px = 1.0 * (p.x**2 + (p.y-py)**2 - l**2) / (2*p.x-2*l)
     res = Point(px, py)
     return res
@@ -88,19 +89,56 @@ def update(parabola, i):
         xCoord = parabola.vertex.x
         yCoord = parabola.vertex.y
 
+
+
+
+        if  parabola.next is not None:
+            if parabola.vertexU is None:
+                inter = intersection(parabola.vertex, parabola.next.vertex, i)
+            else:
+                inter = intersection(parabola.vertex, parabola.vertexU, i)
+            if not parabola.foundU:
+                parabola.foundU = True
+                parabola.initU = inter.x, inter.y
+                parabola.vertexU =  parabola.next.vertex
+            if not parabola.endU:
+                if parabola.foundL:
+                    parabola.upperSegment.set_data([inter.x, parabola.initL[0]], [inter.y, parabola.initL[1]])
+                else:
+                    parabola.upperSegment.set_data([inter.x, parabola.initU[0]], [inter.y, parabola.initU[1]])
+
+            parabola.upperLimit = parabola.next.lowerLimit= inter
+            # parabola.next.lowerLimit = inter
+
         parXU = np.arange(parabola.upperLimit.x, i, step/40)
         p = i-xCoord
         parYU = np.sqrt(-(2*p*(parXU-i+p/2)))+yCoord
-        if  parabola.next is not None:
-            parabola.upperLimit = intersection(parabola.vertex, parabola.next.vertex, i)
-        
+
         parabola.parUpper.set_xdata(parXU)
         parabola.parUpper.set_ydata(parYU)
 
+        if  parabola.prev is not None :
+            if parabola.vertexL is None:
+                inter = intersectionL(parabola.vertex, parabola.prev.vertex, i)
+            else: 
+                inter = intersectionL(parabola.vertex, parabola.prev.vertex, i)
+                
+            if not parabola.foundL:
+                parabola.foundL = True
+                parabola.initL = inter.x, inter.y
+                parabola.vertexL =  parabola.prev.vertex
+            if not parabola.endL: 
+                if parabola.foundU:
+                    parabola.lowerSegment.set_data([inter.x, parabola.initU[0]], [inter.y, parabola.initU[1]])
+                else:
+                    parabola.lowerSegment.set_data([inter.x, parabola.initL[0]], [inter.y, parabola.initL[1]])
+                    
+            
+            parabola.lowerLimit = parabola.prev.upperLimit  = inter
+            # parabola.prev.upperLimit  = inter
+
         parXL = np.arange(parabola.lowerLimit.x, i, step/40)
         parYL = -np.sqrt(-(2*p*(parXL-i+p/2)))+yCoord
-        if  parabola.prev is not None:
-            parabola.lowerLimit = intersection(parabola.vertex, parabola.prev.vertex, i)
 
         parabola.parLower.set_xdata(parXL)
         parabola.parLower.set_ydata(parYL)
@@ -130,7 +168,7 @@ def update(parabola, i):
                 # # current = Q.extractMin()
 
 
-        if i >= size-0.01:
+        if i >= size*1.5-0.01:
             parabola.parUpper.set_xdata([])
             parabola.parUpper.set_ydata([])
             parabola.parLower.set_xdata([])
@@ -151,9 +189,9 @@ def intersect(p, i):
     b = 0.0
 
     if i.prev is not None:
-        a = (intersection(i.prev.p, i.p, 1.0*p.x)).y
+        a = (intersection(i.prev.vertex, i.vertex, 1.0*p.x)).y
     if i.next is not None:
-        b = (intersection(i.p, i.next.p, 1.0*p.x)).y
+        b = (intersection(i.vertex, i.next.vertex, 1.0*p.x)).y
 
     if (((i.prev is None) or (a <= p.y)) and ((i.next is None) or (p.y <= b))):
         py = p.y
@@ -161,7 +199,7 @@ def intersect(p, i):
         res = Point(px, py)
         return True, res
     return False, None
-    
+
 
 
 def frontInsert(p):
@@ -182,15 +220,16 @@ def frontInsert(p):
                     i.next = i.next.prev
                 else:
                     i.next = Parabola(i.vertex, prev=i)
-                i.next.lowerLimit = i.lowerLimit
+                # i.next.lowerLimit = i.lowerLimit
 
                 i.next.prev = Parabola(p, prev=i, next=i.next)
                 i.next = i.next.prev
 
-                i = i.next 
-                i.prev.upperLimit = i.lowerLimit = z
-                i.next.lowerLimit = i.upperLimit = z
-                
+                i = i.next
+
+                # i.prev.upperLimit = i.lowerLimit = z
+                # i.next.lowerLimit = i.upperLimit = z
+
                 return
             i = i.next
 
@@ -199,13 +238,14 @@ def frontInsert(p):
 
 def processPoint():
     p = Q.extractMin()
+    lastAdded = p
 
     frontInsert(p)
 
 def animationFrame(i):
     traversal.set_xdata(i)
 
-    
+
     if (len(Q.heap) > 0):
         if (Q.getMin().x < i):
             processPoint()
@@ -214,9 +254,9 @@ def animationFrame(i):
 
 
     return traversal
-    
 
-animation = FuncAnimation(fig, func=animationFrame, frames=np.arange(0, size, step), interval=1)
+
+animation = FuncAnimation(fig, func=animationFrame, frames=np.arange(0, size*1.5, step), interval=1)
 
 
 plt.show()

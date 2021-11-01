@@ -21,11 +21,17 @@ class Parabola():
     prev = None
     next = None
 
-
+    initU = ()
+    initL = ()
     parX = []
     parY = []
-    found = False
+    foundU = False
+    endU = False
+    foundL = False
+    endL = False
     leaf = True
+    vertexU = None
+    vertexL = None
 
     def __init__(self, vertex, lowerLimit = Point(0,0), upperLimit = Point(0,1), prev = None, next = None):
         self.vertex = vertex
@@ -36,6 +42,9 @@ class Parabola():
         self.upperLimit = upperLimit
         self.prev = prev
         self.next = next
+        self.upperSegment, = plt.plot(self.initU, (), c=self.color)
+        self.lowerSegment, = plt.plot(self.initU, (), c=self.color)
+        self.middleSegment, = plt.plot((), (), c=self.color)
 
     def __lt__(self, other):
         return self.lowerLimit[1] < other.upperLimit[1]
