@@ -10,13 +10,15 @@ fig, ax = plt.subplots()
 
 step = 0.001
 size = 1
-n = 3
+n = 2
 
 ax.set_xlim(0, size), ax.set_ylim(0, size)
 
-x = np.sort(np.random.choice(np.arange(0, size, step), size=n))
-y = np.random.choice(np.arange(0, size, step), size=n)
+# x = np.sort(np.random.choice(np.arange(0, size, step), size=n))
+# y = np.random.choice(np.arange(0, size, step), size=n)
 
+x = [0.13, 0.44]
+y = [0.32, 0.33]
 #Priorityqueue of points in the plane
 Q = MinHeap()
 
@@ -88,84 +90,113 @@ def intersectionL(p0, p1, l):
 def update(parabola, i):
         xCoord = parabola.vertex.x
         yCoord = parabola.vertex.y
-
-
-
-
-        if  parabola.next is not None:
-            if parabola.vertexU is None:
-                inter = intersection(parabola.vertex, parabola.next.vertex, i)
-            else:
-                inter = intersection(parabola.vertex, parabola.vertexU, i)
-            if not parabola.foundU:
-                parabola.foundU = True
-                parabola.initU = inter.x, inter.y
-                parabola.vertexU =  parabola.next.vertex
-            if not parabola.endU:
-                if parabola.foundL:
-                    parabola.upperSegment.set_data([inter.x, parabola.initL[0]], [inter.y, parabola.initL[1]])
-                else:
-                    parabola.upperSegment.set_data([inter.x, parabola.initU[0]], [inter.y, parabola.initU[1]])
-
-            parabola.upperLimit = parabola.next.lowerLimit= inter
-            # parabola.next.lowerLimit = inter
-
-        parXU = np.arange(parabola.upperLimit.x, i, step/40)
         p = i-xCoord
-        parYU = np.sqrt(-(2*p*(parXU-i+p/2)))+yCoord
 
-        parabola.parUpper.set_xdata(parXU)
-        parabola.parUpper.set_ydata(parYU)
 
-        if  parabola.prev is not None :
-            if parabola.vertexL is None:
-                inter = intersectionL(parabola.vertex, parabola.prev.vertex, i)
-            else: 
+        if parabola.next is not None:
+            # Calculates the interseccion of the upper part of the parabola
+            if parabola.next.vertex.x > parabola.vertex.x:
+                # The next parabola is over the current parabola
+
+                #Store the limit point
+                if parabola.vertexU is None:
+                    inter = intersection(parabola.vertex, parabola.next.vertex, i)
+                else:
+                    inter = intersection(parabola.vertex, parabola.vertexU, i)
+                if not parabola.foundU:
+                    parabola.foundU = True
+                    parabola.initU = inter.x, inter.y
+                    parabola.vertexU =  parabola.next.vertex
+
+                parabola.lowerStart = inter
+                parXU = np.arange(parabola.lowerLimit.x, parabola.lowerStart.x, step/40)
+                parYU = -np.sqrt(-(2*p*(parXU-i+p/2)))+yCoord
+
+                parabola.parLower.set_data(parXU, parYU)
+                parabola.parUpper.set_data((),())
+
+
+            elif parabola.next.vertex.x < parabola.vertex.x:
+                # The next parabola is under the current parabola
+                # inter = intersection(parabola.vertex, parabola.next.vertex, i)
+
+                if parabola.vertexL is None:
+                    inter = intersection(parabola.vertex, parabola.next.vertex, i)
+                else:
+                    inter = intersection(parabola.vertex, parabola.vertexL, i)
+                if not parabola.foundL:
+                    parabola.foundL = True
+                    parabola.vertexL =  parabola.next.vertex
+
+                parabola.upperLimit = inter
+                parXU = np.arange(parabola.upperLimit.x, parabola.upperStart.x, step/40)
+                parYU = np.sqrt(-(2*p*(parXU-i+p/2)))+yCoord
+
+                parabola.parUpper.set_data(parXU, parYU)
+                parabola.parLower.set_data((),())
+        
+        
+        if parabola.prev is not None:
+            if parabola.prev.vertex.x > parabola.vertex.x:
+                # The prev parabola is over the current parabola
+                # inter = intersection(parabola.vertex, parabola.prev.vertex, i)
+
+                if parabola.vertexL is None:
+                    inter = intersectionL(parabola.vertex, parabola.prev.vertex, i)
+                else:
+                    inter = intersectionL(parabola.vertex, parabola.prev.vertex, i)
+                if not parabola.foundL:
+                    parabola.foundL = True
+                    parabola.vertexL =  parabola.prev.vertex
+
+                parabola.upperStart = inter
+                parXU = np.arange(parabola.upperLimit.x, parabola.upperStart.x, step/40)
+                parYU = np.sqrt(-(2*p*(parXU-i+p/2)))+yCoord
+
+                parabola.parUpper.set_data(parXU, parYU)
+                parabola.parLower.set_data((),())
+
+
+            elif parabola.prev.vertex.x < parabola.vertex.x:
+                # The prev parabola is under the current parabola
                 inter = intersectionL(parabola.vertex, parabola.prev.vertex, i)
                 
-            if not parabola.foundL:
-                parabola.foundL = True
-                parabola.initL = inter.x, inter.y
-                parabola.vertexL =  parabola.prev.vertex
-            if not parabola.endL: 
-                if parabola.foundU:
-                    parabola.lowerSegment.set_data([inter.x, parabola.initU[0]], [inter.y, parabola.initU[1]])
-                else:
-                    parabola.lowerSegment.set_data([inter.x, parabola.initL[0]], [inter.y, parabola.initL[1]])
+                parabola.lowerLimit = inter
+                parXU = np.arange(parabola.lowerLimit.x, parabola.lowerStart.x, step/40)
+                parYU = -np.sqrt(-(2*p*(parXU-i+p/2)))+yCoord
+
+                parabola.parLower.set_data(parXU, parYU)
+                #parabola.parUpper.set_data((),())
+        
+        if parabola.prev is None and parabola.next is None:
+
+            parXU = np.arange(parabola.upperLimit.x, parabola.upperStart.x, step/40)
+            parYU = np.sqrt(-(2*p*(parXU-i+p/2)))+yCoord
+
+            parabola.parUpper.set_data(parXU, parYU)
+
+            parXU = np.arange(parabola.lowerLimit.x, parabola.lowerStart.x, step/40)
+            parYU = -np.sqrt(-(2*p*(parXU-i+p/2)))+yCoord
+
+            parabola.parLower.set_data(parXU, parYU)
+
+        #updates lower parabola
+        # if  parabola.prev is not None :
+        #     # Calculates the interseccion of the lower part of the parabola
+        #     inter = intersectionL(parabola.vertex, parabola.prev.vertex, i)
+        #     parabola.initL = inter.x, inter.y
+        #     #Updates the lower limit of the parabola
+        #     parabola.lowerLimit = parabola.prev.upperLimit  = inter
+
                     
-            
-            parabola.lowerLimit = parabola.prev.upperLimit  = inter
-            # parabola.prev.upperLimit  = inter
+        # if parabola.next is not None and parabola.prev is not None:      
+        #     parabola.segment.set_data([parabola.initL[0], parabola.initU[0]], [parabola.initL[1], parabola.initU[1]])
+        #     # parabola.prev.upperLimit  = inter
 
-        parXL = np.arange(parabola.lowerLimit.x, i, step/40)
-        parYL = -np.sqrt(-(2*p*(parXL-i+p/2)))+yCoord
+        # parXL = np.arange(parabola.lowerLimit.x, parabola.lowerStart.x, step/40)
+        # parYL = -np.sqrt(-(2*p*(parXL-i+p/2)))+yCoord
 
-        parabola.parLower.set_xdata(parXL)
-        parabola.parLower.set_ydata(parYL)
-
-
-        # if upperParabola is not None and upperParabola.value.vertex != parabola.vertex:
-        #     parabola.found = True
-        #     upperPoint = intersectionU(upperParabola.value.vertex, parabola.vertex, i)
-        #     lowerPoint = intersectionL(upperParabola.value.vertex, parabola.vertex, i)
-        #     parabola.upperLimit = upperPoint
-        #     parabola.lowerLimit = lowerPoint
-            # upperParabola.value.lowerLimit = point
-            # plt.scatter(point[0], point[1])
-
-                # xU = upperParabola.value.parUpper.get_data()[0]
-                # fU = upperParabola.value.parUpper.get_data()[1]
-                # gU = parYU
-                # idx = np.argwhere(np.diff(np.sign(fU - gU))).flatten()
-                # plt.plot(xU[idx], fU[idx], 'ro')
-
-                # xL = upperParabola.value.parLower.get_data()[0]
-                # fL = upperParabola.value.parLower.get_data()[1]
-                # gL = parYL
-                # idx = np.argwhere(np.diff(np.sign(fL - gL))).flatten()
-                # plt.plot(parXL[idx], fL[idx], 'ro')
-                # # print([value for value in upperParabola.value.parY if value in parabola.parY])
-                # # current = Q.extractMin()
+        # parabola.parLower.set_data(parXL, parYL)
 
 
         if i >= size*1.5-0.01:

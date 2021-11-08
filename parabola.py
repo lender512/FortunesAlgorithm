@@ -40,11 +40,10 @@ class Parabola():
         self.parLower, = plt.plot(self.parX, self.parY, c=self.color)
         self.lowerLimit = lowerLimit
         self.upperLimit = upperLimit
+        self.lowerStart = self.upperStart = Point(1,1)
         self.prev = prev
         self.next = next
-        self.upperSegment, = plt.plot(self.initU, (), c=self.color)
-        self.lowerSegment, = plt.plot(self.initU, (), c=self.color)
-        self.middleSegment, = plt.plot((), (), c=self.color)
+        self.segment, = plt.plot((), (), c=self.color)
 
     def __lt__(self, other):
         return self.lowerLimit[1] < other.upperLimit[1]
