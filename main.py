@@ -10,15 +10,15 @@ fig, ax = plt.subplots()
 
 step = 0.001
 size = 1
-n = 2
+n = 3
 
 ax.set_xlim(0, size), ax.set_ylim(0, size)
 
-# x = np.sort(np.random.choice(np.arange(0, size, step), size=n))
-# y = np.random.choice(np.arange(0, size, step), size=n)
+x = np.sort(np.random.choice(np.arange(0, size, step), size=n))
+y = np.random.choice(np.arange(0, size, step), size=n)
 
-x = [0.13, 0.44]
-y = [0.32, 0.33]
+x = [0.13, 0.44, 0.76]
+y = [0.49, 0.55, 0.50]
 #Priorityqueue of points in the plane
 Q = MinHeap()
 
@@ -97,36 +97,30 @@ def update(parabola, i):
             # Calculates the interseccion of the upper part of the parabola
             if parabola.next.vertex.x > parabola.vertex.x:
                 # The next parabola is over the current parabola
-
-                #Store the limit point
-                if parabola.vertexU is None:
-                    inter = intersection(parabola.vertex, parabola.next.vertex, i)
+                inter = intersection(parabola.vertex, parabola.next.vertex, i)
+                if inter.y < parabola.vertex.y:
+                    #The upper part of the parabola collides with the upper part of the next parabola
+                    parabola.lowerStart = inter
+                    
+                    parXU = np.arange(parabola.lowerLimit.x, parabola.lowerStart.x, step/40)
+                    parYU = -np.sqrt(-(2*p*(parXU-i+p/2)))+yCoord
+                    
+                    parabola.parLower.set_data(parXU, parYU)
+                    parabola.parUpper.set_data((),())
                 else:
-                    inter = intersection(parabola.vertex, parabola.vertexU, i)
-                if not parabola.foundU:
-                    parabola.foundU = True
-                    parabola.initU = inter.x, inter.y
-                    parabola.vertexU =  parabola.next.vertex
-
-                parabola.lowerStart = inter
-                parXU = np.arange(parabola.lowerLimit.x, parabola.lowerStart.x, step/40)
-                parYU = -np.sqrt(-(2*p*(parXU-i+p/2)))+yCoord
-
-                parabola.parLower.set_data(parXU, parYU)
-                parabola.parUpper.set_data((),())
+                    #The upper part of the parabola collides with the lower part of the next parabola
+                    parabola.upperLimit = inter
+                    parXU = np.arange(parabola.lowerLimit.x, parabola.lowerStart.x, step/40)
+                    parYU = -np.sqrt(-(2*p*(parXU-i+p/2)))+yCoord
+                    parabola.parLower.set_data(parXU, parYU)
+                    parXU = np.arange(parabola.upperLimit.x, parabola.upperStart.x, step/40)
+                    parYU = np.sqrt(-(2*p*(parXU-i+p/2)))+yCoord
+                    parabola.parUpper.set_data(parXU, parYU)
 
 
             elif parabola.next.vertex.x < parabola.vertex.x:
                 # The next parabola is under the current parabola
-                # inter = intersection(parabola.vertex, parabola.next.vertex, i)
-
-                if parabola.vertexL is None:
-                    inter = intersection(parabola.vertex, parabola.next.vertex, i)
-                else:
-                    inter = intersection(parabola.vertex, parabola.vertexL, i)
-                if not parabola.foundL:
-                    parabola.foundL = True
-                    parabola.vertexL =  parabola.next.vertex
+                inter = intersection(parabola.vertex, parabola.next.vertex, i)
 
                 parabola.upperLimit = inter
                 parXU = np.arange(parabola.upperLimit.x, parabola.upperStart.x, step/40)
@@ -134,27 +128,31 @@ def update(parabola, i):
 
                 parabola.parUpper.set_data(parXU, parYU)
                 parabola.parLower.set_data((),())
-        
+                
+
         
         if parabola.prev is not None:
             if parabola.prev.vertex.x > parabola.vertex.x:
                 # The prev parabola is over the current parabola
-                # inter = intersection(parabola.vertex, parabola.prev.vertex, i)
+                inter = intersectionL(parabola.vertex, parabola.prev.vertex, i)
+                
+                if inter.y > parabola.vertex.y:
+                    #The lower part of the parabola collides with the lower part of the next parabola
+                    parabola.upperStart = inter
+                    parXU = np.arange(parabola.upperLimit.x, parabola.upperStart.x, step/40)
+                    parYU = np.sqrt(-(2*p*(parXU-i+p/2)))+yCoord
 
-                if parabola.vertexL is None:
-                    inter = intersectionL(parabola.vertex, parabola.prev.vertex, i)
+                    parabola.parUpper.set_data(parXU, parYU)
+                    parabola.parLower.set_data((),())
                 else:
-                    inter = intersectionL(parabola.vertex, parabola.prev.vertex, i)
-                if not parabola.foundL:
-                    parabola.foundL = True
-                    parabola.vertexL =  parabola.prev.vertex
-
-                parabola.upperStart = inter
-                parXU = np.arange(parabola.upperLimit.x, parabola.upperStart.x, step/40)
-                parYU = np.sqrt(-(2*p*(parXU-i+p/2)))+yCoord
-
-                parabola.parUpper.set_data(parXU, parYU)
-                parabola.parLower.set_data((),())
+                    #The lower part of the parabola collides with the upper part of the prev parabola
+                    parabola.lowerLimit = inter
+                    parXU = np.arange(parabola.upperLimit.x, parabola.upperStart.x, step/40)
+                    parYU = np.sqrt(-(2*p*(parXU-i+p/2)))+yCoord
+                    parabola.parUpper.set_data(parXU, parYU)
+                    parXU = np.arange(parabola.lowerLimit.x, parabola.lowerStart.x, step/40)
+                    parYU = -np.sqrt(-(2*p*(parXU-i+p/2)))+yCoord
+                    parabola.parLower.set_data(parXU, parYU)
 
 
             elif parabola.prev.vertex.x < parabola.vertex.x:
@@ -166,7 +164,6 @@ def update(parabola, i):
                 parYU = -np.sqrt(-(2*p*(parXU-i+p/2)))+yCoord
 
                 parabola.parLower.set_data(parXU, parYU)
-                #parabola.parUpper.set_data((),())
         
         if parabola.prev is None and parabola.next is None:
 
@@ -180,23 +177,9 @@ def update(parabola, i):
 
             parabola.parLower.set_data(parXU, parYU)
 
-        #updates lower parabola
-        # if  parabola.prev is not None :
-        #     # Calculates the interseccion of the lower part of the parabola
-        #     inter = intersectionL(parabola.vertex, parabola.prev.vertex, i)
-        #     parabola.initL = inter.x, inter.y
-        #     #Updates the lower limit of the parabola
-        #     parabola.lowerLimit = parabola.prev.upperLimit  = inter
-
-                    
-        # if parabola.next is not None and parabola.prev is not None:      
-        #     parabola.segment.set_data([parabola.initL[0], parabola.initU[0]], [parabola.initL[1], parabola.initU[1]])
-        #     # parabola.prev.upperLimit  = inter
-
-        # parXL = np.arange(parabola.lowerLimit.x, parabola.lowerStart.x, step/40)
-        # parYL = -np.sqrt(-(2*p*(parXL-i+p/2)))+yCoord
-
-        # parabola.parLower.set_data(parXL, parYL)
+        if parabola.prev is not None and parabola.next is not None and parabola.haveSegment:
+            parabola.haveSegment = True
+            parabola.segment.set_data([parabola.upperLimit.x, parabola.lowerLimit.x], [parabola.upperLimit.y, parabola.lowerLimit.y])
 
 
         if i >= size*1.5-0.01:
@@ -231,7 +214,19 @@ def intersect(p, i):
         return True, res
     return False, None
 
+#Function to search for circular events
+def check_circle_event(parabola, x0):
+        # look for a new circle event for arc parabola
+        if (parabola.e is not None) and (parabola.e.x != x0):
+            parabola.e.valid = False
+        parabola.e = None
 
+        if (parabola.pprev is None) or (parabola.pnext is None): return
+
+        flag, x, o = circle(parabola.pprev.p, parabola.p, parabola.pnext.p)
+        if flag and (x > x0):
+            parabola.e = Event(x, o, parabola)
+            event.push(parabola.e)
 
 def frontInsert(p):
     global root
@@ -248,19 +243,20 @@ def frontInsert(p):
                 flag, zz = intersect(p, i.next)
                 if (i.next is not None) and (not flag):
                     i.next.prev = Parabola(i.vertex, prev=i, next=i.next)
+                    i.next.prev.haveSegment = False
                     i.next = i.next.prev
                 else:
                     i.next = Parabola(i.vertex, prev=i)
-                # i.next.lowerLimit = i.lowerLimit
 
                 i.next.prev = Parabola(p, prev=i, next=i.next)
                 i.next = i.next.prev
 
                 i = i.next
 
-                # i.prev.upperLimit = i.lowerLimit = z
-                # i.next.lowerLimit = i.upperLimit = z
-
+                #Check for circle events
+                check_circle_event(i, p.x)
+                check_circle_event(i.pprev, p.x)
+                check_circle_event(i.pnext, p.x)
                 return
             i = i.next
 
@@ -269,6 +265,7 @@ def frontInsert(p):
 
 def processPoint():
     p = Q.extractMin()
+    global lastAdded
     lastAdded = p
 
     frontInsert(p)

@@ -32,10 +32,13 @@ class Parabola():
     leaf = True
     vertexU = None
     vertexL = None
+    visited = False
+    haveSegment = True
 
     def __init__(self, vertex, lowerLimit = Point(0,0), upperLimit = Point(0,1), prev = None, next = None):
         self.vertex = vertex
-        self.color=np.random.rand(3,)
+        # self.color=np.random.rand(3,)
+        self.color = (0, 0, 0)
         self.parUpper, = plt.plot(self.parX, self.parY, c=self.color)
         self.parLower, = plt.plot(self.parX, self.parY, c=self.color)
         self.lowerLimit = lowerLimit
