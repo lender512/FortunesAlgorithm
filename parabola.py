@@ -1,26 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from point import *
-
-class Segment:
-    start = None
-    end = None
-    done = False
-    
-    def __init__(self, p):
-        self.start = p
-        self.end = None
-        self.done = False
-
-    def finish(self, p):
-        if self.done: return
-        self.end = p
-        self.done = True 
+from segment import *
 
 class Parabola():
     prev = None
     next = None
     e = None
+    lowerSegment = None
+    upperSegment = None
 
     initU = ()
     initL = ()
@@ -49,7 +37,8 @@ class Parabola():
         self.lowerStart = self.upperStart = Point(1,1)
         self.prev = prev
         self.next = next
-        self.segment, = plt.plot((), (), c=self.color)
+        self.lowerSegment = None
+        self.upperSegment = None
 
     def __lt__(self, other):
         return self.lowerLimit[1] < other.upperLimit[1]

@@ -18,11 +18,12 @@ ax.set_xlim(0, size), ax.set_ylim(0, size)
 x = np.sort(np.random.choice(np.arange(0, size, step), size=n))
 y = np.random.choice(np.arange(0, size, step), size=n)
 
-# x = [0.13, 0.44, 0.76]
-# y = [0.49, 0.55, 0.50]
+# x = [0.13, 0.44]
+# y = [0.49, 0.55]
 
-x = [0.20, 0.44, 0.66]
-y = [0.49, 0.80, 0.50]
+# x = [0.20, 0.44, 0.66]
+# y = [0.49, 0.80, 0.50]
+
 #Priorityqueue of points in the plane
 Q = MinHeap()
 E = MinHeap()
@@ -34,8 +35,6 @@ for i in range(n):
 
 root = None
 lastAdded = None
-# root = parabolasAVL.insert(None, Parabola(Q.extractMin()))
-# root.found = True
 
 plt.scatter(x, y)
 
@@ -182,14 +181,12 @@ def update(parabola, i):
 
             parabola.parLower.set_data(parXU, parYU)
 
+        #The error is here D:
         if parabola.prev is not None and parabola.next is not None and parabola.haveSegment:
-            parabola.haveSegment = True
-            if parabola.finishedLower and not parabola.finishedUpper:
-                parabola.segment.set_data([parabola.upperLimit.x, parabola.endLower.x], [parabola.upperLimit.y, parabola.endLower.y])
-            elif parabola.finishedUpper and not parabola.finishedLower:
-                parabola.segment.set_data([parabola.endUpper.x, parabola.lowerLimit.x], [parabola.endUpper.y, parabola.lowerLimit.y])
-            elif not parabola.finishedUpper and not parabola.finishedLower:
-                parabola.segment.set_data([parabola.upperLimit.x, parabola.lowerLimit.x], [parabola.upperLimit.y, parabola.lowerLimit.y])
+            if parabola.upperSegment is not None and not parabola.upperSegment.done:
+                parabola.upperSegment.update(parabola.upperSegment.start, parabola.upperLimit)
+            if parabola.lowerSegment is not None and not parabola.lowerSegment.done:
+                parabola.lowerSegment.update(parabola.lowerSegment.start, parabola.lowerLimit)
 
 
 
@@ -252,7 +249,7 @@ def circle(a, b, c):
     return True, x, o
 
 #Function to search for circular events
-def check_circle_event(parabola, x0):
+def searchCircleEvent(parabola, x0):
         # look for a new circle event for arc parabola
         if (parabola.e is not None) and (parabola.e.x != x0):
             parabola.e.valid = False
@@ -284,16 +281,25 @@ def frontInsert(p):
                     i.next = i.next.prev
                 else:
                     i.next = Parabola(i.vertex, prev=i)
+                i.next.upperSegment = i.upperSegment
 
                 i.next.prev = Parabola(p, prev=i, next=i.next)
                 i.next = i.next.prev
 
                 i = i.next
+                
+                seg = Segment(z)
+                # output.append(seg)
+                i.prev.upperSegment = i.lowerSegment = seg
+
+                seg = Segment(z)
+                # output.append(seg)
+                i.next.lowerSegment = i.upperSegment = seg
 
                 #Check for circle events
-                check_circle_event(i, p.x)
-                check_circle_event(i.prev, p.x)
-                check_circle_event(i.next, p.x)
+                searchCircleEvent(i, p.x)
+                searchCircleEvent(i.prev, p.x)
+                searchCircleEvent(i.next, p.x)
                 return
             i = i.next
 
@@ -311,19 +317,26 @@ def processCircle():
     e = E.extractMin()
 
     if e.valid:
+
+        s = Segment(e.point)
+
         #Remove linked parabola
         parabola = e.parabola
         if parabola.prev is not None:
-            parabola.prev.finishedUpper = True
-            parabola.prev.endUpper = e.point
+            # parabola.prev.finishedUpper = True
+            # parabola.prev.endUpper = e.point
             parabola.prev.next = parabola.next
-            # parabola.pprev.s1 = s
+            parabola.prev.upperSegment = s
         if parabola.next is not None:
-            parabola.next.finishedLower = True
-            parabola.next.endLower = e.point
+            # parabola.next.endLower = e.point
             parabola.next.prev = parabola.prev
-            # parabola.pnext.s0 = s
-        print("Circle event :D")
+            parabola.next.lowerSegment = s
+
+        if parabola.lowerSegment is not None: parabola.lowerSegment.finish(e.point)
+        if parabola.upperSegment is not None: parabola.upperSegment.finish(e.point)
+
+        if parabola.prev is not None: searchCircleEvent(parabola.prev, e.x)
+        if parabola.next is not None: searchCircleEvent(parabola.next, e.x)
 
 def animationFrame(i):
     traversal.set_xdata(i)
