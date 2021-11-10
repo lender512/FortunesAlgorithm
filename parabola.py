@@ -20,6 +20,7 @@ class Segment:
 class Parabola():
     prev = None
     next = None
+    e = None
 
     initU = ()
     initL = ()
@@ -34,6 +35,8 @@ class Parabola():
     vertexL = None
     visited = False
     haveSegment = True
+    finishedUpper = False
+    finishedLower = False
 
     def __init__(self, vertex, lowerLimit = Point(0,0), upperLimit = Point(0,1), prev = None, next = None):
         self.vertex = vertex

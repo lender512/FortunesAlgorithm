@@ -5,6 +5,7 @@ from util import *
 from minHeap import *
 from parabola import *
 from point import *
+from event import *
 import math
 fig, ax = plt.subplots()
 
@@ -17,10 +18,14 @@ ax.set_xlim(0, size), ax.set_ylim(0, size)
 x = np.sort(np.random.choice(np.arange(0, size, step), size=n))
 y = np.random.choice(np.arange(0, size, step), size=n)
 
-x = [0.13, 0.44, 0.76]
-y = [0.49, 0.55, 0.50]
+# x = [0.13, 0.44, 0.76]
+# y = [0.49, 0.55, 0.50]
+
+x = [0.20, 0.44, 0.66]
+y = [0.49, 0.80, 0.50]
 #Priorityqueue of points in the plane
 Q = MinHeap()
+E = MinHeap()
 
 #Insert in priorityQueue
 for i in range(n):
@@ -179,7 +184,13 @@ def update(parabola, i):
 
         if parabola.prev is not None and parabola.next is not None and parabola.haveSegment:
             parabola.haveSegment = True
-            parabola.segment.set_data([parabola.upperLimit.x, parabola.lowerLimit.x], [parabola.upperLimit.y, parabola.lowerLimit.y])
+            if parabola.finishedLower and not parabola.finishedUpper:
+                parabola.segment.set_data([parabola.upperLimit.x, parabola.endLower.x], [parabola.upperLimit.y, parabola.endLower.y])
+            elif parabola.finishedUpper and not parabola.finishedLower:
+                parabola.segment.set_data([parabola.endUpper.x, parabola.lowerLimit.x], [parabola.endUpper.y, parabola.lowerLimit.y])
+            elif not parabola.finishedUpper and not parabola.finishedLower:
+                parabola.segment.set_data([parabola.upperLimit.x, parabola.lowerLimit.x], [parabola.upperLimit.y, parabola.lowerLimit.y])
+
 
 
         if i >= size*1.5-0.01:
@@ -214,6 +225,32 @@ def intersect(p, i):
         return True, res
     return False, None
 
+#Return the right most point of a given circle
+def circle(a, b, c):
+    # check if bc is a "right turn" from ab
+    if ((b.x - a.x)*(c.y - a.y) - (c.x - a.x)*(b.y - a.y)) > 0: return False, None, None
+
+    # Joseph O'Rourke, Computational Geometry in C (2nd ed.) p.189
+    A = b.x - a.x
+    B = b.y - a.y
+    C = c.x - a.x
+    D = c.y - a.y
+    E = A*(a.x + b.x) + B*(a.y + b.y)
+    F = C*(a.x + c.x) + D*(a.y + c.y)
+    G = 2*(A*(c.y - b.y) - B*(c.x - b.x))
+
+    if (G == 0): return False, None, None # Points are co-linear
+
+    # point o is the center of the circle
+    ox = 1.0 * (D*E - B*F) / G
+    oy = 1.0 * (A*F - C*E) / G
+
+    # o.x plus radius equals max x coord
+    x = ox + math.sqrt((a.x-ox)**2 + (a.y-oy)**2)
+    o = Point(ox, oy)
+        
+    return True, x, o
+
 #Function to search for circular events
 def check_circle_event(parabola, x0):
         # look for a new circle event for arc parabola
@@ -221,12 +258,12 @@ def check_circle_event(parabola, x0):
             parabola.e.valid = False
         parabola.e = None
 
-        if (parabola.pprev is None) or (parabola.pnext is None): return
+        if (parabola.prev is None) or (parabola.next is None): return
 
-        flag, x, o = circle(parabola.pprev.p, parabola.p, parabola.pnext.p)
+        flag, x, o = circle(parabola.prev.vertex, parabola.vertex, parabola.next.vertex)
         if flag and (x > x0):
             parabola.e = Event(x, o, parabola)
-            event.push(parabola.e)
+            E.insertKey(parabola.e)
 
 def frontInsert(p):
     global root
@@ -255,8 +292,8 @@ def frontInsert(p):
 
                 #Check for circle events
                 check_circle_event(i, p.x)
-                check_circle_event(i.pprev, p.x)
-                check_circle_event(i.pnext, p.x)
+                check_circle_event(i.prev, p.x)
+                check_circle_event(i.next, p.x)
                 return
             i = i.next
 
@@ -270,13 +307,31 @@ def processPoint():
 
     frontInsert(p)
 
+def processCircle():
+    e = E.extractMin()
+
+    if e.valid:
+        #Remove linked parabola
+        parabola = e.parabola
+        if parabola.prev is not None:
+            parabola.prev.finishedUpper = True
+            parabola.prev.endUpper = e.point
+            parabola.prev.next = parabola.next
+            # parabola.pprev.s1 = s
+        if parabola.next is not None:
+            parabola.next.finishedLower = True
+            parabola.next.endLower = e.point
+            parabola.next.prev = parabola.prev
+            # parabola.pnext.s0 = s
+        print("Circle event :D")
+
 def animationFrame(i):
     traversal.set_xdata(i)
 
-
-    if (len(Q.heap) > 0):
-        if (Q.getMin().x < i):
-            processPoint()
+    if (len(E.heap) > 0) and E.getMin().x < i:
+        processCircle()
+    if (len(Q.heap) > 0) and Q.getMin().x < i:
+        processPoint()
 
     inOrderUpdate(root, i)
 
