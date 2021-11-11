@@ -29,12 +29,12 @@ class Parabola():
     def __init__(self, vertex, lowerLimit = Point(0,0), upperLimit = Point(0,1), prev = None, next = None):
         self.vertex = vertex
         # self.color=np.random.rand(3,)
-        self.color = (0, 0, 0)
+        self.color = (0.5, 0, 0)
         self.parUpper, = plt.plot(self.parX, self.parY, c=self.color)
         self.parLower, = plt.plot(self.parX, self.parY, c=self.color)
         self.lowerLimit = lowerLimit
         self.upperLimit = upperLimit
-        self.lowerStart = self.upperStart = Point(1,1)
+        self.lowerStart = self.upperStart = self.vertex
         self.prev = prev
         self.next = next
         self.lowerSegment = None
